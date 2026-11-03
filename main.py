@@ -7,6 +7,22 @@ from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
+@app.on_event("startup")
+def startup_event():
+    conn = sqlite3.connect("places.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS places (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            address TEXT,
+            contact_info TEXT,
+            description TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
 # Pydantic-модель для валидации данных
 class PlaceCreate(BaseModel):
     name: str
