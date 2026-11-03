@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Hub</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 15px;
+            margin: 0;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: var(--tg-theme-secondary-bg-color, #f9f9f9);
+        }
+        h3 { margin: 0 0 5px 0; }
+        p { margin: 3px 0; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🎓 Student Hub</h2>
+    <input type="text" id="search" placeholder="Поиск по студентам / местам..." oninput="fetchPlaces()">
+    <div id="places-list">Загрузка...</div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Разворачиваем окно на весь экран
+
+        // Меняем здесь URL на твой ngrok или локальный сервер
+        const API_URL = window.location.origin;
+
+        async function fetchPlaces() {
+            const query = document.getElementById('search').value;
+            const url = query ? `${API_URL}/places/?query=${encodeURIComponent(query)}` : `${API_URL}/places/`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const list = document.getElementById('places-list');
+                list.innerHTML = '';
+
+                if (data.length === 0) {
+                    list.innerHTML = '<p>Ничего не найдено</p>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <h3>${item.name || 'Без имени'}</h3>
+                        <p><b>Описание:</b> ${item.description || '-'}</p>
+                        <p><b>Адрес:</b> ${item.address || '-'}</p>
+                        <p><b>Контакт:</b> ${item.contact_info || item.contact || '-'}</p>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById('places-list').innerText = 'Ошибка загрузки данных';
+            }
+        }
+
+        // Загружаем данные при открытии
+        fetchPlaces();
+    </script>
+</body>
+</html>
