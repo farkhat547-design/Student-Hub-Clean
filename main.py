@@ -91,8 +91,8 @@ async def add_place(place: PlaceCreate):
         conn = sqlite3.connect("places.db")
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO places (name, address, contact, description, category, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (place.name, place.address, place.contact, place.description, place.category, place.latitude, place.longitude)
+            "INSERT INTO places (name, address, contact_info, description, category, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (place.name, place.address, place.contact_info, place.description, place.category, place.latitude, place.longitude)
         )
         conn.commit()
         conn.close()
