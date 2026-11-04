@@ -145,6 +145,20 @@
             box-shadow: 0 4px 10px rgba(107, 17, 255, 0.2);
         }
 
+        .reviews-section {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .review-item {
+            background: #f9f9f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
         .hidden {
             display: none;
         }
@@ -222,6 +236,7 @@
         const API_URL = "https://student-hub-clean-1.onrender.com"; // Либо локальный http://127.0.0.1:8000
 
         let telegramId = 123456;
+        let currentUserName = "Студент";
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user?.id) {
             telegramId = window.Telegram.WebApp.initDataUnsafe.user.id;
         }
@@ -244,7 +259,8 @@
                 const response = await fetch(`${API_URL}/users/${telegramId}`);
                 if (response.ok) {
                     const user = await response.json();
-                    document.getElementById('view-name').innerText = `${user.first_name} ${user.last_name}`;
+                    currentUserName = `${user.first_name} ${user.last_name}`;
+                    document.getElementById('view-name').innerText = currentUserName;
                     document.getElementById('view-uni').innerText = user.university;
                     document.getElementById('view-faculty').innerText = user.faculty;
                     document.getElementById('view-bio').innerText = user.bio || 'Нет описания';
@@ -327,7 +343,7 @@
                     list.appendChild(card);
                 });
 
-                // Вывод мест
+                // Вывод мест с блоком отзывов и валидацией рейтинга
                 places.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'card';
@@ -336,11 +352,92 @@
                         <p><b>Категория:</b> ${item.category || '-'}</p>
                         <p><b>Описание:</b> ${item.description || '-'}</p>
                         <p><b>Адрес:</b> ${item.address || '-'}</p>
+                        
+                        <div class="reviews-section">
+                            <h4>💬 Отзывы и оценка</h4>
+                            <div id="reviews-for-${item.id}">Загрузка отзывов...</div>
+                            
+                            <div style="margin-top: 10px;">
+                                <select id="rating-${item.id}">
+                                    <option value="5">⭐⭐⭐⭐⭐ (5 - Отлично)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4 - Хорошо)</option>
+                                    <option value="3">⭐⭐⭐ (3 - Нормально)</option>
+                                    <option value="2">⭐⭐ (2 - Плохо)</option>
+                                    <option value="1">⭐ (1 - Ужасно)</option>
+                                </select>
+                                <textarea id="review-text-${item.id}" placeholder="Ваш отзыв о месте..." style="margin-bottom: 5px; padding: 8px;"></textarea>
+                                <button onclick="addReview(${item.id})" style="padding: 8px; font-size: 13px;">Оставить отзыв</button>
+                            </div>
+                        </div>
                     `;
                     list.appendChild(card);
+                    loadReviews(item.id);
                 });
             } catch (error) {
                 console.error('Ошибка поиска:', error);
+            }
+        }
+
+        // Загрузка отзывов для конкретного места
+        async function loadReviews(placeId) {
+            try {
+                const response = await fetch(`${API_URL}/places/${placeId}/reviews/`);
+                const reviews = await response.json();
+                const container = document.getElementById(`reviews-for-${placeId}`);
+                
+                if (reviews.length === 0) {
+                    container.innerHTML = '<p style="font-size: 13px; color: #777;">Пока нет отзывов. Будьте первыми!</p>';
+                    return;
+                }
+
+                container.innerHTML = "";
+                reviews.forEach(rev => {
+                    const revEl = document.createElement('div');
+                    revEl.className = 'review-item';
+                    revEl.innerHTML = `<b>${rev.author}</b> (⭐ ${rev.rating}/5): ${rev.text}`;
+                    container.appendChild(revEl);
+                });
+            } catch (err) {
+                console.error('Ошибка загрузки отзывов', err);
+            }
+        }
+
+        // Отправка отзыва с проверкой рейтинга
+        async function addReview(placeId) {
+            const rating = parseInt(document.getElementById(`rating-${placeId}`).value);
+            const text = document.getElementById(`review-text-${placeId}`).value;
+
+            if (!text) {
+                alert("Напишите текст отзыва!");
+                return;
+            }
+
+            if (rating < 1 || rating > 5) {
+                alert("Рейтинг должен быть строго от 1 до 5!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/places/${placeId}/reviews/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        author: currentUserName,
+                        rating: rating,
+                        text: text
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Отзыв успешно добавлен! ⭐');
+                    document.getElementById(`review-text-${placeId}`).value = '';
+                    loadReviews(placeId); // Перезагружаем список отзывов
+                } else {
+                    const err = await response.json();
+                    alert('Ошибка: ' + JSON.stringify(err.detail));
+                }
+            } catch (error) {
+                console.error('Ошибка сети:', error);
             }
         }
 
