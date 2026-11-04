@@ -523,8 +523,16 @@
                         <h3>💬 ${group.name}</h3>
                         <p><b>Категория:</b> ${group.category}</p>
                         <p>${group.description || 'Без описания'}</p>
+
+                        <div class="chat-container">
+                            <h4>Чат сообщества</h4>
+                            <div class="message-box" id="chat-message-${group.id}">Загрузка сообщений...</div>
+                            <input type="text" id="chat-input-${group.id}" placeholder="Напишите сообщение..." style="margin-bottom: 5px; padding: 8px;">
+                            <button onclick="sendMessage(${group.id})" style="padding: 8px; font-size: 13px;">Отправить</button>
+                        </div>
                     `;
                     list.appendChild(card);
+                    loadMessage(group.id); // Загружаем сообщения для каждой группы
                 });
             } catch (error) {
                 console.error('Ошибка загрузки групп:', error);
