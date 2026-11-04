@@ -1,119 +1,963 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
-    <title>Student Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#7664e8">
+    <title>Student Hub — Your Campus. Your People.</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --primary: #7867f5;
+            --primary-dark: #6251dc;
+            --secondary: #a855f7;
+            --pink: #ec4899;
+            --text: #20203a;
+            --muted: #77778e;
+            --surface: #ffffff;
+            --background: #f7f6ff;
+            --border: #eceaf7;
+            --gradient: linear-gradient(135deg, #7664e8 0%, #9b5de5 55%, #e879b9 100%);
+            --shadow: 0 12px 35px rgba(89, 71, 180, 0.09);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-            background: #f4f7f6;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at 10% 5%, rgba(177, 156, 255, 0.17), transparent 28%),
+                radial-gradient(circle at 90% 25%, rgba(255, 174, 218, 0.14), transparent 25%),
+                var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 35px 20px 60px;
         }
 
-        .card {
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .app {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        .add-place-container {
+        /* HEADER */
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 23px;
+            font-weight: 800;
+            box-shadow: 0 7px 18px rgba(120, 103, 245, 0.3);
+        }
+
+        .brand-name {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+        }
+
+        .brand-name span {
+            color: var(--primary);
+        }
+
+        .brand-subtitle {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
             background: white;
-            padding: 20px;
+            border: 1px solid var(--border);
+            padding: 9px 14px;
+            border-radius: 30px;
+            color: #5b5b72;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* HERO */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background: var(--gradient);
+            border-radius: 25px;
+            padding: 38px;
+            color: white;
+            margin-bottom: 25px;
+            box-shadow: 0 18px 40px rgba(120, 103, 245, 0.22);
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            background: rgba(255, 255, 255, 0.10);
+            border-radius: 50%;
+            right: -50px;
+            top: -100px;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            right: 100px;
+            bottom: -110px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 580px;
+        }
+
+        .hero-label {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.17);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 7px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            margin-bottom: 18px;
+        }
+
+        .hero h1 {
+            font-size: clamp(27px, 5vw, 39px);
+            line-height: 1.2;
+            letter-spacing: -1.4px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.86);
+            max-width: 470px;
+        }
+
+        /* MAIN GRID */
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .section-card {
+            background: var(--surface);
+            border: 1px solid rgba(230, 226, 250, 0.8);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow);
             margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            min-width: 0;
+        }
+
+        .section-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 17px 40px rgba(89, 71, 180, 0.13);
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 21px;
+        }
+
+        .section-icon {
+            width: 43px;
+            height: 43px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #eeeaff, #f9e9fa);
+            font-size: 21px;
+            flex-shrink: 0;
+        }
+
+        .section-heading h2 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+        }
+
+        .section-heading p {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* FORMS */
+
+        .form-group {
+            margin-bottom: 13px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            color: #64647c;
+            font-weight: 700;
+            margin-bottom: 7px;
         }
 
         input,
         textarea {
             width: 100%;
-            margin-bottom: 10px;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 13px 14px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: #faf9ff;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
         }
 
-        button {
+        input::placeholder,
+        textarea::placeholder {
+            color: #aaa8bd;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(120, 103, 245, 0.11);
+        }
+
+        textarea {
+            min-height: 95px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* BUTTONS */
+
+        .btn {
             width: 100%;
-            padding: 10px;
-            background: #2f80ed;
-            color: white;
             border: none;
-            border-radius: 5px;
-            font-weight: bold;
+            border-radius: 11px;
+            padding: 14px 18px;
+            background: var(--gradient);
+            color: white;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 6px 15px rgba(120, 103, 245, 0.2);
+            transition: all 0.2s ease;
         }
 
-        button:hover {
-            background: #1d65c1;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(120, 103, 245, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #f0edff;
+            color: var(--primary-dark);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e2ff;
+            box-shadow: none;
+        }
+
+        .btn-small {
+            width: auto;
+            padding: 10px 14px;
+            font-size: 11px;
+        }
+
+        /* PROFILE VIEW */
+
+        .profile-info {
+            background: linear-gradient(145deg, #f7f4ff, #fff4fa);
+            border: 1px solid #eee9ff;
+            padding: 19px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .profile-avatar {
+            width: 58px;
+            height: 58px;
+            border-radius: 19px;
+            background: var(--gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .profile-name {
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .profile-university {
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .profile-bio {
+            color: #6f6d82;
+            font-size: 12px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        /* SEARCH */
+
+        .search-section {
+            margin-top: 7px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-wrapper input {
+            padding: 16px 18px 16px 45px;
+            border-radius: 14px;
+            background: white;
+            box-shadow: var(--shadow);
+            font-size: 13px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 17px;
+        }
+
+        .places-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .places-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .places-count {
+            font-size: 11px;
+            color: var(--muted);
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 7px 11px;
+        }
+
+        /* PLACE CARDS */
+
+        .places-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .place-card {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 17px;
+            box-shadow: 0 7px 22px rgba(89, 71, 180, 0.06);
+            animation: fadeUp 0.35s ease both;
+            transition: all 0.2s ease;
+            min-width: 0;
+        }
+
+        .place-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .place-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 13px;
+        }
+
+        .place-icon {
+            width: 39px;
+            height: 39px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eeeaff, #fceafa);
+            font-size: 19px;
+        }
+
+        .place-category {
+            color: var(--primary-dark);
+            background: #f1edff;
+            border-radius: 20px;
+            padding: 6px 9px;
+            font-size: 10px;
+            font-weight: 700;
+            max-width: 60%;
+            overflow-wrap: anywhere;
+        }
+
+        .place-card h3 {
+            font-size: 15px;
+            margin-bottom: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .place-detail {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.7;
+            margin-top: 7px;
+            overflow-wrap: anywhere;
+        }
+
+        .place-detail strong {
+            color: #55546b;
+        }
+
+        .empty-state {
+            background: white;
+            border: 1px dashed #d9d3f3;
+            border-radius: 18px;
+            text-align: center;
+            padding: 38px 20px;
+            color: var(--muted);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 35px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h3 {
+            color: var(--text);
+            font-size: 15px;
+            margin-bottom: 7px;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+        }
+
+        .error-message {
+            color: #dc5252;
+            font-size: 12px;
+            padding: 15px;
+            background: #fff0f0;
+            border-radius: 12px;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+            margin-top: 35px;
+            color: #9996ae;
+            font-size: 11px;
+        }
+
+        .footer strong {
+            color: var(--primary);
+        }
+
+        /* ANIMATIONS */
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 650px) {
+            body {
+                padding: 20px 14px 40px;
+            }
+
+            .header {
+                margin-bottom: 20px;
+            }
+
+            .hero {
+                padding: 27px 23px;
+                border-radius: 20px;
+            }
+
+            .hero h1 {
+                font-size: 29px;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .section-card {
+                padding: 20px;
+            }
+
+            .places-list {
+                grid-template-columns: 1fr;
+            }
+
+            .status {
+                font-size: 10px;
+                padding: 8px 10px;
+            }
+
+            .brand-name {
+                font-size: 19px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .status {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 26px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Student Hub</h1>
+    <main class="app">
 
-    <!-- Форма добавления нового места -->
-    <div class="add-place-container">
-        <h3>📍 Добавить новое место</h3>
-        <input type="text" id="placeName" placeholder="Название (например, Библиотека)">
-        <input type="text" id="placeCategory" placeholder="Категория (например, учеба / кафе)">
-        <input type="text" id="placeAddress" placeholder="Адрес (например, ул. МанАСА 1)">
-        <textarea id="placeDescription" placeholder="Описание или заметки"></textarea>
-        <button onclick="addNewPlace()">Сохранить место</button>
-    </div>
+        <!-- HEADER -->
+        <header class="header">
+            <div class="brand">
+                <div class="logo">S</div>
+                <div>
+                    <div class="brand-name">Student<span>Hub</span></div>
+                    <div class="brand-subtitle">Your Campus. Your People.</div>
+                </div>
+            </div>
 
-    <!-- Поиск и список мест -->
-    <input type="text" id="search" placeholder="Поиск по студентам / местам..." oninput="fetchPlaces()">
-    <div id="places-list"></div>
+            <div class="status">
+                <span class="status-dot"></span>
+                Student community
+            </div>
+        </header>
+
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-label">✦ THE STUDENT NETWORK</div>
+                <h1>Your Campus.<br>Your People. Your Opportunities.</h1>
+                <p>
+                    Meet students, discover interesting places and build
+                    connections that can change your future.
+                </p>
+            </div>
+        </section>
+
+        <!-- PROFILE AND ADD PLACE -->
+        <section class="main-grid">
+
+            <!-- PROFILE -->
+            <div class="section-card">
+                <div class="section-heading">
+                    <div class="section-icon">👤</div>
+                    <div>
+                        <h2>Мой профиль</h2>
+                        <p>Расскажи другим студентам о себе</p>
+                    </div>
+                </div>
+
+                <div id="profile-view" style="display: none;">
+                    <div class="profile-info">
+                        <div class="profile-avatar" id="view-avatar">S</div>
+                        <div class="profile-name" id="view-name"></div>
+                        <div class="profile-university" id="view-uni"></div>
+                        <div class="profile-bio" id="view-bio"></div>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="toggleEditProfile()">
+                        ✏️ Редактировать профиль
+                    </button>
+                </div>
+
+                <div id="profile-form">
+                    <div class="form-group">
+                        <label>ИМЯ</label>
+                        <input type="text" id="firstName" placeholder="Например, Erlan">
+                    </div>
+
+                    <div class="form-group">
+                        <label>ФАМИЛИЯ</label>
+                        <input type="text" id="lastName" placeholder="Например, Choybekov">
+                    </div>
+
+                    <div class="form-group">
+                        <label>УНИВЕРСИТЕТ</label>
+                        <input type="text" id="university" placeholder="Например, Manas">
+                    </div>
+
+                    <div class="form-group">
+                        <label>ФАКУЛЬТЕТ / КУРС</label>
+                        <input type="text" id="faculty" placeholder="Например, Management, 2 курс">
+                    </div>
+
+                    <div class="form-group">
+                        <label>О СЕБЕ</label>
+                        <textarea id="bio" placeholder="Расскажи о своих интересах, навыках и целях..."></textarea>
+                    </div>
+
+                    <button class="btn" onclick="saveProfile()">
+                        Сохранить профиль →
+                    </button>
+                </div>
+            </div>
+
+            <!-- ADD PLACE -->
+            <div class="section-card">
+                <div class="section-heading">
+                    <div class="section-icon">📍</div>
+                    <div>
+                        <h2>Добавить место</h2>
+                        <p>Поделись полезным местом со студентами</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>НАЗВАНИЕ</label>
+                    <input type="text" id="placeName" placeholder="Например, библиотека">
+                </div>
+
+                <div class="form-group">
+                    <label>КАТЕГОРИЯ</label>
+                    <input type="text" id="placeCategory" placeholder="Учёба, кафе, отдых...">
+                </div>
+
+                <div class="form-group">
+                    <label>АДРЕС</label>
+                    <input type="text" id="placeAddress" placeholder="Улица, здание...">
+                </div>
+
+                <div class="form-group">
+                    <label>ОПИСАНИЕ</label>
+                    <textarea id="placeDescription" placeholder="Чем это место полезно студентам?"></textarea>
+                </div>
+
+                <button class="btn" onclick="addNewPlace()">
+                    + Добавить место
+                </button>
+            </div>
+
+        </section>
+
+        <!-- SEARCH -->
+        <section class="search-section">
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    id="search"
+                    placeholder="Поиск по студентам и местам..."
+                    oninput="fetchPlaces()"
+                >
+            </div>
+
+            <div class="places-header">
+                <h2>Открой новые места</h2>
+                <span class="places-count" id="places-count">Загрузка...</span>
+            </div>
+
+            <div id="places-list" class="places-list">
+                <div class="empty-state">
+                    <div class="empty-icon">⏳</div>
+                    <h3>Загружаем места...</h3>
+                    <p>Подожди немного</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            Made for students, by students. <strong>Student Hub</strong> © 2026
+        </footer>
+
+    </main>
 
     <script>
-        const API_URL = "https://student-hub-clean-1.onrender.com"; // Твой адрес бэкенда в облаке
+        const API_URL = "https://student-hub-clean-1.onrender.com";
 
+        // Telegram ID
+        let telegramId = 123456;
+
+        if (
+            window.Telegram &&
+            window.Telegram.WebApp &&
+            window.Telegram.WebApp.initDataUnsafe?.user?.id
+        ) {
+            telegramId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        // Helper: safely display text
+        function setText(id, value) {
+            document.getElementById(id).textContent = value || "";
+        }
+
+        // LOAD PROFILE
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_URL}/users/${telegramId}`);
+
+                if (!response.ok) return;
+
+                const user = await response.json();
+
+                setText("view-name", `${user.first_name || ""} ${user.last_name || ""}`.trim());
+                setText("view-uni", `${user.university || ""} · ${user.faculty || ""}`);
+                setText("view-bio", user.bio || "Пользователь пока не добавил описание.");
+
+                const initials = `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}`;
+                setText("view-avatar", initials || "S");
+
+                // Keep current data in form for editing
+                document.getElementById("firstName").value = user.first_name || "";
+                document.getElementById("lastName").value = user.last_name || "";
+                document.getElementById("university").value = user.university || "";
+                document.getElementById("faculty").value = user.faculty || "";
+                document.getElementById("bio").value = user.bio || "";
+
+                document.getElementById("profile-view").style.display = "block";
+                document.getElementById("profile-form").style.display = "none";
+
+            } catch (error) {
+                console.error("Ошибка загрузки профиля:", error);
+            }
+        }
+
+        // SAVE PROFILE
+        async function saveProfile() {
+            const first_name = document.getElementById("firstName").value.trim();
+            const last_name = document.getElementById("lastName").value.trim();
+            const university = document.getElementById("university").value.trim();
+            const faculty = document.getElementById("faculty").value.trim();
+            const bio = document.getElementById("bio").value.trim();
+
+            if (!first_name || !last_name || !university || !faculty) {
+                alert("Пожалуйста, заполните основные поля профиля!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/users/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        telegram_id: telegramId,
+                        first_name,
+                        last_name,
+                        university,
+                        faculty,
+                        bio
+                    })
+                });
+
+                if (response.ok) {
+                    alert("Профиль успешно сохранён! 🎉");
+                    await loadProfile();
+                } else {
+                    alert("Ошибка при сохранении профиля");
+                }
+
+            } catch (error) {
+                console.error("Ошибка сети:", error);
+                alert("Не удалось связаться с сервером.");
+            }
+        }
+
+        // EDIT PROFILE
+        function toggleEditProfile() {
+            document.getElementById("profile-view").style.display = "none";
+            document.getElementById("profile-form").style.display = "block";
+        }
+
+        // FETCH PLACES
         async function fetchPlaces() {
-            const query = document.getElementById('search').value;
-            const url = query ? `${API_URL}/places/?query=${encodeURIComponent(query)}` : `${API_URL}/places/`;
+            const query = document.getElementById("search").value.trim();
+
+            const url = query
+                ? `${API_URL}/places/?query=${encodeURIComponent(query)}`
+                : `${API_URL}/places/`;
+
+            const list = document.getElementById("places-list");
+            const count = document.getElementById("places-count");
 
             try {
                 const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error("Server returned an error");
+                }
+
                 const data = await response.json();
 
-                const list = document.getElementById('places-list');
                 list.innerHTML = "";
+                count.textContent = `${data.length} мест`;
 
-                if (data.length === 0) {
-                    list.innerHTML = '<p>Ничего не найдено</p>';
+                if (!Array.isArray(data) || data.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🔎</div>
+                            <h3>Пока ничего не найдено</h3>
+                            <p>Попробуй другой запрос или добавь новое место.</p>
+                        </div>
+                    `;
                     return;
                 }
 
                 data.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <h3>${item.name || 'Без имени'}</h3>
-                        <p><b>Категория:</b> ${item.category || '-'}</p>
-                        <p><b>Описание:</b> ${item.description || '-'}</p>
-                        <p><b>Адрес:</b> ${item.address || '-'}</p>
-                    `;
+                    const card = document.createElement("article");
+                    card.className = "place-card";
+
+                    const top = document.createElement("div");
+                    top.className = "place-top";
+
+                    const icon = document.createElement("div");
+                    icon.className = "place-icon";
+                    icon.textContent = "📍";
+
+                    const category = document.createElement("span");
+                    category.className = "place-category";
+                    category.textContent = item.category || "Без категории";
+
+                    top.appendChild(icon);
+                    top.appendChild(category);
+
+                    const title = document.createElement("h3");
+                    title.textContent = item.name || "Без имени";
+
+                    const description = document.createElement("p");
+                    description.className = "place-detail";
+                    description.textContent = item.description || "Описание отсутствует";
+
+                    const address = document.createElement("p");
+                    address.className = "place-detail";
+                    address.textContent = `📍 ${item.address || "Адрес не указан"}`;
+
+                    card.appendChild(top);
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    card.appendChild(address);
+
                     list.appendChild(card);
                 });
+
             } catch (error) {
-                console.error('Ошибка при загрузке мест:', error);
+                console.error("Ошибка при загрузке мест:", error);
+
+                count.textContent = "Ошибка";
+
+                list.innerHTML = `
+                    <div class="error-message">
+                        Не удалось загрузить места. Проверь подключение к серверу и попробуй ещё раз.
+                    </div>
+                `;
             }
         }
 
+        // ADD NEW PLACE
         async function addNewPlace() {
-            const name = document.getElementById('placeName').value;
-            const category = document.getElementById('placeCategory').value;
-            const address = document.getElementById('placeAddress').value;
-            const description = document.getElementById('placeDescription').value;
+            const name = document.getElementById("placeName").value.trim();
+            const category = document.getElementById("placeCategory").value.trim();
+            const address = document.getElementById("placeAddress").value.trim();
+            const description = document.getElementById("placeDescription").value.trim();
 
             if (!name || !category) {
                 alert("Пожалуйста, заполните название и категорию!");
@@ -122,39 +966,44 @@
 
             try {
                 const response = await fetch(`${API_URL}/places/`, {
-                    method: 'POST',
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        name: name,
-                        category: category,
+                        name,
+                        category,
                         address: address || "Не указан",
                         contact_info: "Telegram Mini App",
-                        description: description || ""
+                        description
                     })
                 });
 
                 if (response.ok) {
-                    alert('Место успешно добавлено! 🎉');
-                    document.getElementById('placeName').value = '';
-                    document.getElementById('placeCategory').value = '';
-                    document.getElementById('placeAddress').value = '';
-                    document.getElementById('placeDescription').value = '';
-                    fetchPlaces(); // Сразу обновляем список на экране
+                    alert("Место успешно добавлено! 🎉");
+
+                    document.getElementById("placeName").value = "";
+                    document.getElementById("placeCategory").value = "";
+                    document.getElementById("placeAddress").value = "";
+                    document.getElementById("placeDescription").value = "";
+
+                    await fetchPlaces();
+
                 } else {
                     const errData = await response.json();
-                    alert('Ошибка при добавлении: ' + JSON.stringify(errData));
+                    alert("Ошибка при добавлении: " + JSON.stringify(errData));
                 }
+
             } catch (error) {
-                console.error('Ошибка сети:', error);
-                alert('Не удалось связаться с сервером.');
+                console.error("Ошибка сети:", error);
+                alert("Не удалось связаться с сервером.");
             }
         }
 
-        // Загружаем список при открытии страницы
+        // INITIALIZE
+        loadProfile();
         fetchPlaces();
     </script>
-</body>
 
+</body>
 </html>
