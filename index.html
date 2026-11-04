@@ -1,60 +1,92 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Hub</title>
-    <!-- Telegram WebApp SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 15px;
-            margin: 0;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            background: #f4f7f6;
         }
+
         .card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
+            background: white;
+            padding: 15px;
             margin-bottom: 10px;
-            background-color: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        h3 { margin: 0 0 5px 0; }
-        p { margin: 3px 0; font-size: 14px; }
-        input {
+
+        .add-place-container {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input,
+        textarea {
             width: 100%;
+            margin-bottom: 10px;
             padding: 10px;
-            margin-bottom: 15px;
             box-sizing: border-box;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #2f80ed;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d65c1;
         }
     </style>
 </head>
+
 <body>
-    <h2>🎓 Student Hub</h2>
+
+    <h1>Student Hub</h1>
+
+    <!-- Форма добавления нового места -->
+    <div class="add-place-container">
+        <h3>📍 Добавить новое место</h3>
+        <input type="text" id="placeName" placeholder="Название (например, Библиотека)">
+        <input type="text" id="placeCategory" placeholder="Категория (например, учеба / кафе)">
+        <input type="text" id="placeAddress" placeholder="Адрес (например, ул. МанАСА 1)">
+        <textarea id="placeDescription" placeholder="Описание или заметки"></textarea>
+        <button onclick="addNewPlace()">Сохранить место</button>
+    </div>
+
+    <!-- Поиск и список мест -->
     <input type="text" id="search" placeholder="Поиск по студентам / местам..." oninput="fetchPlaces()">
-    <div id="places-list">Загрузка...</div>
+    <div id="places-list"></div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем окно на весь экран
-
-        // Меняем здесь URL на твой ngrok или локальный сервер
-        const API_URL = window.location.origin;
+        const API_URL = "https://student-hub-clean-1.onrender.com"; // Твой адрес бэкенда в облаке
 
         async function fetchPlaces() {
             const query = document.getElementById('search').value;
             const url = query ? `${API_URL}/places/?query=${encodeURIComponent(query)}` : `${API_URL}/places/`;
-            
+
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
                 const list = document.getElementById('places-list');
-                list.innerHTML = '';
+                list.innerHTML = "";
 
                 if (data.length === 0) {
                     list.innerHTML = '<p>Ничего не найдено</p>';
@@ -66,20 +98,63 @@
                     card.className = 'card';
                     card.innerHTML = `
                         <h3>${item.name || 'Без имени'}</h3>
+                        <p><b>Категория:</b> ${item.category || '-'}</p>
                         <p><b>Описание:</b> ${item.description || '-'}</p>
                         <p><b>Адрес:</b> ${item.address || '-'}</p>
-                        <p><b>Контакт:</b> ${item.contact_info || item.contact || '-'}</p>
                     `;
                     list.appendChild(card);
                 });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('places-list').innerText = 'Ошибка загрузки данных';
+            } catch (error) {
+                console.error('Ошибка при загрузке мест:', error);
             }
         }
 
-        // Загружаем данные при открытии
+        async function addNewPlace() {
+            const name = document.getElementById('placeName').value;
+            const category = document.getElementById('placeCategory').value;
+            const address = document.getElementById('placeAddress').value;
+            const description = document.getElementById('placeDescription').value;
+
+            if (!name || !category) {
+                alert("Пожалуйста, заполните название и категорию!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/places/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        category: category,
+                        address: address || "Не указан",
+                        contact_info: "Telegram Mini App",
+                        description: description || ""
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Место успешно добавлено! 🎉');
+                    document.getElementById('placeName').value = '';
+                    document.getElementById('placeCategory').value = '';
+                    document.getElementById('placeAddress').value = '';
+                    document.getElementById('placeDescription').value = '';
+                    fetchPlaces(); // Сразу обновляем список на экране
+                } else {
+                    const errData = await response.json();
+                    alert('Ошибка при добавлении: ' + JSON.stringify(errData));
+                }
+            } catch (error) {
+                console.error('Ошибка сети:', error);
+                alert('Не удалось связаться с сервером.');
+            }
+        }
+
+        // Загружаем список при открытии страницы
         fetchPlaces();
     </script>
 </body>
+
 </html>
