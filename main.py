@@ -1,10 +1,15 @@
 import sqlite3
+import shutil
+import uuid
 from contextlib import contextmanager
 from fastapi import FastAPI, HTTPException, Query
+from fastapi import APIRouter, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from typing import Optional
+
+router = APIRouter()
 
 app = FastAPI()
 app.add_middleware(
@@ -228,6 +233,17 @@ async def get_reviews(place_id: int):
 
 
 # --- ЭНДПОИНТЫ ДЛЯ ПРОФИЛЕЙ ПОЛЬЗОВАТЕЛЕЙ ---
+
+@router.post("/upload-avatar/")
+async def upload_avatar(file: UploadFile = File(...)):
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = f"static/avatars/{unique_filename}"
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return {"avatar_url": f"/{file_path}"}
 
 @app.get("/users/")
 async def get_users(query: str = None):

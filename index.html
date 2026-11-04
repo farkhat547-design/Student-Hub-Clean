@@ -263,6 +263,19 @@
         <div id="groups-list"></div>
     </div>
 
+    <div class="chat-message">
+        <img src="${message.avatar_url}" alt="Avatar" width="30" height="30" style="border-radius: 50%;">
+        <span class="username">${message.username}</span>
+        <span class="text">${message.text}</span>
+    </div>
+
+    <form id="avatar-form" enctype="multipart/form-data">
+        <input type="file" id="avatar-input" name="avatar" accept="image/*">
+        <button type="submit">Загрузить аватар</button>
+    </form>
+
+    <img id="user-avatar" src="/static/avatars/default.png" alt="Аватар пользователя" style="display:none; width: 100px; border-radius: 50%;">
+
     <script>
         const API_URL = "https://student-hub-clean-1.onrender.com"; // Либо локальный http://127.0.0.1:8000
 
@@ -283,6 +296,35 @@
                 fetchGroups();
             }
         }
+
+        document.getElementById('avatar-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('avatar-input');
+            if (fileInput.files.length === 0) {
+                alert("Выберите файл для загрузки!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                let response = await fetch('/upload-avatar/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    let data = await response.json();
+                    document.getElementById('user-avatar').src = data.avatar_url;
+                    alert("Аватар успешно загружен!");
+                } else {
+                    alert("Ошибка загрузки аватара");
+                }
+            } catch (error) {
+                console.error("Ошибка сети:", error);
+            }
+        });
 
         // Профиль
         async function loadProfile() {
