@@ -85,6 +85,17 @@ def startup_event():
                 creator_id INTEGER
             )
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id INTEGER,
+                sender_telegram_id INTEGER NOT NULL,
+                sender_name TEXT NOT NULL,
+                text TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+            )
+        """)
 
 # Pydantic-модели с валидацией
 class PlaceCreate(BaseModel):
@@ -114,6 +125,11 @@ class GroupCreate(BaseModel):
     category: str
     description: Optional[str] = None
     creator_id: int
+
+class MessageCreate(BaseModel):
+    sender_telegram_id: int
+    sender_name: str
+    text: str
 
 
 # --- ЭНДПОИНТЫ ДЛЯ МЕСТ И ОТЗЫВОВ ---
@@ -293,6 +309,45 @@ async def create_group(group: GroupCreate):
                 (group.name, group.category, group.description, group.creator_id)
             )
             return {"message": "Group created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/groups/{group_id}/messages/")
+async def get_group_messages(group_id: int):
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM messages WHERE id = ?", (group_id,))
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Group not found")
+
+            cursor.execute(
+                "SELECT * FROM messages WHERE group_id = ? ORDER BY id ASC",
+                (group_id,)
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/groups/{group_id}/messages/")
+async def send_group_message(group_id: int, message: MessageCreate):
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM groups WHERE id = ?", (group_id,))
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Group not found")
+
+            cursor.execute(
+                "INSERT INTO messages (group_id, sender_telegram_id, sender_name, text) VALUES (?, ?, ?, ?)",
+                (group_id, message.sender_telegram_id, message.sender_name, message.text)
+            )
+            return {"message": "Message sent successfully"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

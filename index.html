@@ -34,7 +34,8 @@
             margin-bottom: 20px;
         }
 
-        .card, .container-box {
+        .card,
+        .container-box {
             background: var(--card-bg);
             padding: 20px;
             margin-bottom: 15px;
@@ -62,7 +63,9 @@
             opacity: 0.9;
         }
 
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
             margin-bottom: 12px;
             padding: 12px;
@@ -75,7 +78,8 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             border-color: #8a2be2;
             background: #fff;
         }
@@ -162,6 +166,33 @@
         .hidden {
             display: none;
         }
+
+        .chat-container {
+            background: #faf9fc;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .message-box {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .messsage-bubble b {
+            color: #6b11ff;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 
@@ -213,7 +244,7 @@
 
         <!-- Поиск -->
         <input type="text" id="search" placeholder="🔍 Поиск по местам или студентам..." oninput="searchAll()">
-        
+
         <h3>Результаты поиска / Места:</h3>
         <div id="places-list"></div>
     </div>
@@ -244,7 +275,7 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
+
             document.getElementById(tabId).classList.remove('hidden');
             event.currentTarget.classList.add('active');
 
@@ -264,8 +295,8 @@
                     document.getElementById('view-uni').innerText = user.university;
                     document.getElementById('view-faculty').innerText = user.faculty;
                     document.getElementById('view-bio').innerText = user.bio || 'Нет описания';
-                    
-                    const initials = `${user.first_name[0]||''}${user.last_name[0]||''}`.toUpperCase();
+
+                    const initials = `${user.first_name[0] || ''}${user.last_name[0] || ''}`.toUpperCase();
                     document.getElementById('user-avatar-text').innerText = initials || 'ST';
 
                     document.getElementById('profile-view').classList.remove('hidden');
@@ -384,7 +415,7 @@
                 const response = await fetch(`${API_URL}/places/${placeId}/reviews/`);
                 const reviews = await response.json();
                 const container = document.getElementById(`reviews-for-${placeId}`);
-                
+
                 if (reviews.length === 0) {
                     container.innerHTML = '<p style="font-size: 13px; color: #777;">Пока нет отзывов. Будьте первыми!</p>';
                     return;
@@ -497,6 +528,56 @@
                 });
             } catch (error) {
                 console.error('Ошибка загрузки групп:', error);
+            }
+        }
+
+        async function loadMessage(groupId) {
+            try {
+                const response = await fetch(`${API_URL}/groups/${groupId}/messages/`);
+                const messages = await response.json();
+                const box = document.getElementById(`chat-message-${groupId}`);
+
+                if (messages.length === 0) {
+                    box.innerHTML = '<p style="font-size: 13px; color: #777; font-size: 12px;">Пока нет сообщений. Начните общение!</p>';
+                    return;
+                }
+
+                box.innerHTML = "";
+                messages.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'messsage-bubble';
+                    bubble.innerHTML = `<b>${msg.sender_name}</b>: ${msg.text}`;
+                    box.appendChild(bubble);
+                });
+                box.scrollTop = box.scrollHeight; // Автопрокрутка вниз
+            } catch (err) {
+                console.error('Ошибка загрузки сообщений', err);
+            }
+        }
+
+        async function sendMessage(groupId) {
+            const input = document.getElementById(`chat-input-${groupId}`);
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            try {
+                const response = await fetch(`${API_URL}/groups/${groupId}/messages/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sender_telegram_id: telegramId,
+                        sender_name: currentUserName,
+                        text: text
+                    })
+                });
+
+                if (response.ok) {
+                    input.value = '';
+                    loadMessage(groupId); // Перезагружаем сообщения
+                }
+            } catch (error) {
+                console.error('Ошибка сети:', error);
             }
         }
 
