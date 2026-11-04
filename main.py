@@ -19,6 +19,8 @@ app.add_middleware(
 def startup_event():
     conn = sqlite3.connect("places.db")
     cursor = conn.cursor()
+    
+    # Таблица мест
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS places (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,6 +33,8 @@ def startup_event():
             longitude REAL
         )
     """)
+    
+    # Таблица отзывов
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,10 +45,24 @@ def startup_event():
             FOREIGN KEY (place_id) REFERENCES places(id)
         )
     """)
+    
+    # Таблица пользователей (профили)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telegram_id INTEGER UNIQUE NOT NULL,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            university TEXT NOT NULL,
+            faculty TEXT NOT NULL,
+            bio TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
 
-# Pydantic-модель для валидации данных
+# Pydantic-модели
 class PlaceCreate(BaseModel):
     name: str
     address: str
@@ -54,13 +72,22 @@ class PlaceCreate(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-# Pydantic-модель для валидации отзывов
 class ReviewCreate(BaseModel):
     author: str
     rating: int
     text: str
 
-# Эндпоинт для получения всех мест (с поиском по query)
+class UserProfileCreate(BaseModel):
+    telegram_id: int
+    first_name: str
+    last_name: str
+    university: str
+    faculty: str
+    bio: Optional[str] = None
+
+
+# --- ЭНДПОИНТЫ ДЛЯ МЕСТ И ОТЗЫВОВ ---
+
 @app.get("/places/")
 async def get_places(query: str = None):
     try:
@@ -82,7 +109,6 @@ async def get_places(query: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Эндпоинт для добавления нового места
 @app.post("/places/")
 async def add_place(place: PlaceCreate):
     try:
@@ -98,7 +124,6 @@ async def add_place(place: PlaceCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Обновление существующего места
 @app.put("/places/{place_id}")
 async def update_place(place_id: int, place: PlaceCreate):
     try:
@@ -114,7 +139,6 @@ async def update_place(place_id: int, place: PlaceCreate):
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Удаление места
 @app.delete("/places/{place_id}")
 async def delete_place(place_id: int):
     try:
@@ -127,7 +151,6 @@ async def delete_place(place_id: int):
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Добавление отзыва для места
 @app.post("/places/{place_id}/reviews/")
 async def add_review(place_id: int, review: ReviewCreate):
     try:
@@ -143,7 +166,6 @@ async def add_review(place_id: int, review: ReviewCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Получение всех отзывов для места
 @app.get("/places/{place_id}/reviews/")
 async def get_reviews(place_id: int):
     try:
@@ -157,7 +179,56 @@ async def get_reviews(place_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Главная страница HTML
+
+# --- ЭНДПОИНТЫ ДЛЯ ПРОФИЛЕЙ ПОЛЬЗОВАТЕЛЕЙ ---
+
+@app.post("/users/")
+async def save_profile(user: UserProfileCreate):
+    try:
+        conn = sqlite3.connect("places.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE telegram_id = ?", (user.telegram_id,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            cursor.execute(
+                "UPDATE users SET first_name = ?, last_name = ?, university = ?, faculty = ?, bio = ? WHERE telegram_id = ?",
+                (user.first_name, user.last_name, user.university, user.faculty, user.bio, user.telegram_id)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO users (telegram_id, first_name, last_name, university, faculty, bio) VALUES (?, ?, ?, ?, ?, ?)",
+                (user.telegram_id, user.first_name, user.last_name, user.university, user.faculty, user.bio)
+            )
+        
+        conn.commit()
+        conn.close()
+        return {"message": "Profile saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users/{telegram_id}")
+async def get_profile(telegram_id: int):
+    try:
+        conn = sqlite3.connect("places.db")
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE telegram_id = ?", (telegram_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return dict(row)
+        else:
+            raise HTTPException(status_code=404, detail="Profile not found")
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- ГЛАВНАЯ СТРАНИЦА ---
+
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
     with open("index.html", "r", encoding="utf-8") as f:
