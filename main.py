@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -14,12 +15,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Вспомогательная функция для безопасного подключения к БД с включенными внешними ключами
+# Правильный контекстный менеджер для гарантированного закрытия соединения с БД
+@contextmanager
 def get_db_connection():
     conn = sqlite3.connect("places.db")
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 # Функция для инициализации базы данных при старте
 @app.on_event("startup")
@@ -66,7 +75,7 @@ def startup_event():
             )
         """)
 
-        # Таблица групп / сообществ (для следующего шага)
+        # Таблица групп / сообществ
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS groups (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +85,6 @@ def startup_event():
                 creator_id INTEGER
             )
         """)
-        conn.commit()
 
 # Pydantic-модели с валидацией
 class PlaceCreate(BaseModel):
@@ -116,9 +124,10 @@ async def get_places(query: str = None):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             if query:
+                # Добавлен поиск по адресу, как рекомендовано
                 cursor.execute(
-                    "SELECT * FROM places WHERE name LIKE ? OR description LIKE ? OR category LIKE ?", 
-                    (f"%{query}%", f"%{query}%", f"%{query}%")
+                    "SELECT * FROM places WHERE name LIKE ? OR description LIKE ? OR category LIKE ? OR address LIKE ?", 
+                    (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")
                 )
             else:
                 cursor.execute("SELECT * FROM places")
@@ -136,7 +145,6 @@ async def add_place(place: PlaceCreate):
                 "INSERT INTO places (name, address, contact_info, description, category, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (place.name, place.address, place.contact_info, place.description, place.category, place.latitude, place.longitude)
             )
-            conn.commit()
             return {"message": "Place added successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -152,7 +160,6 @@ async def update_place(place_id: int, place: PlaceCreate):
             )
             if cursor.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Place not found")
-            conn.commit()
             return JSONResponse({"message": "Place updated successfully"})
     except HTTPException as he:
         raise he
@@ -167,7 +174,6 @@ async def delete_place(place_id: int):
             cursor.execute("DELETE FROM places WHERE id = ?", (place_id,))
             if cursor.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Place not found")
-            conn.commit()
             return JSONResponse({"message": "Place deleted successfully"})
     except HTTPException as he:
         raise he
@@ -179,7 +185,6 @@ async def add_review(place_id: int, review: ReviewCreate):
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            # Проверяем, существует ли такое место
             cursor.execute("SELECT id FROM places WHERE id = ?", (place_id,))
             if not cursor.fetchone():
                 raise HTTPException(status_code=404, detail="Place not found")
@@ -188,7 +193,6 @@ async def add_review(place_id: int, review: ReviewCreate):
                 "INSERT INTO reviews (place_id, author, rating, text) VALUES (?, ?, ?, ?)",
                 (place_id, review.author, review.rating, review.text)
             )
-            conn.commit()
             return {"message": "Review added successfully"}
     except HTTPException as he:
         raise he
@@ -244,7 +248,6 @@ async def save_profile(user: UserProfileCreate):
                     "INSERT INTO users (telegram_id, first_name, last_name, university, faculty, bio) VALUES (?, ?, ?, ?, ?, ?)",
                     (user.telegram_id, user.first_name, user.last_name, user.university, user.faculty, user.bio)
                 )
-            conn.commit()
             return {"message": "Profile saved successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -289,7 +292,6 @@ async def create_group(group: GroupCreate):
                 "INSERT INTO groups (name, category, description, creator_id) VALUES (?, ?, ?, ?)",
                 (group.name, group.category, group.description, group.creator_id)
             )
-            conn.commit()
             return {"message": "Group created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
