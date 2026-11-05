@@ -117,8 +117,8 @@
         }
 
         .avatar-circle {
-            width: 50px;
-            height: 50px;
+            width: 90px;
+            height: 90px;
             background: var(--primary-gradient);
             color: white;
             border-radius: 50%;
@@ -126,7 +126,24 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 25px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .avatar-upload-form {
+            margin-bottom: 15px;
+        }
+
+        .avatar-upload-form input {
             margin-bottom: 10px;
         }
 
@@ -222,6 +239,11 @@
                 <button class="secondary-btn" onclick="toggleEditProfile()">Редактировать профиль</button>
             </div>
 
+            <form id="avatar-form" enctype="multipart/form-data">
+                <input type="file" id="avatar-input" name="avatar" accept="image/*">
+                <button type="submit">Загрузить аватар</button>
+            </form>
+
             <div id="profile-form">
                 <input type="text" id="firstName" placeholder="Имя">
                 <input type="text" id="lastName" placeholder="Фамилия">
@@ -263,23 +285,6 @@
         <div id="groups-list"></div>
     </div>
 
-    <div class="chat-message">
-        <img src="${message.avatar_url}" alt="Avatar" width="30" height="30" style="border-radius: 50%;">
-        <span class="username">${message.username}</span>
-        <span class="text">${message.text}</span>
-    </div>
-
-    <div id="my-profile-avatar"
-        style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: ceter; background-color: #6c5ce7;">
-        <img id="profile-img-tag" src="/static/avatars/default.png" alt="Профиль"
-            style="width: 100%; height: 100%; object-fit: cover;">
-    </div>
-
-    <form id="avatar-form" enctype="multipart/form-data">
-        <input type="file" id="avatar-input" name="avatar" accept="image/*">
-        <button type="submit">Загрузить аватар</button>
-    </form>
-
     <img id="user-avatar" src="/static/avatars/default.png" alt="Аватар пользователя"
         style="display:none; width: 100px; border-radius: 50%;">
 
@@ -306,9 +311,11 @@
 
         document.getElementById('avatar-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const fileInput = document.getElementById('avatar-input');
-            if (fileInput.files.length === 0) {
-                alert("Выберите файл для загрузки!");
+
+            if (!fileInput.files.length) {
+                alert("Выберите изображение!");
                 return;
             }
 
@@ -316,28 +323,35 @@
             formData.append('file', fileInput.files[0]);
 
             try {
-                let response = await fetch('/upload-avatar/', {
+                const response = await fetch(`${API_URL}/upload-avatar/`, {
                     method: 'POST',
                     body: formData
                 });
 
-                if (response.ok) {
-                    let data = await response.json();
-                    console.log("Аватар загружен:", data.avatar_url);
-
-                    const avatarImgTag = document.getElementById('profile-img-tag');
-                    if (avatarImgTag) {
-                        avatarImgTag.src = data.avatar_url;
-                    }
-
-                    const myProfileAvatar = document.getElementById('my-profile-avatar');
-                    if (myProfileAvatar) {
-                        myProfileAvatar.innerHTML = `<img src="${data.avatar_url}" alt="Профиль" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                    }
-                    alert("Аватар успешно загружен!");
+                if (!response.ok) {
+                    throw new Error("Ошибка загрузки аватарки");
                 }
+
+                const data = await response.json();
+
+                // Формируем правильный URL картинки
+                const avatarUrl = new URL(data.avatar_url, API_URL).href;
+
+                // Вставляем изображение прямо в круг с инициалами
+                const avatarContainer = document.getElementById('user-avatar-text');
+                avatarContainer.innerHTML = '';
+
+                const img = document.createElement('img');
+                img.src = avatarUrl;
+                img.alt = 'Фото профиля';
+
+                avatarContainer.appendChild(img);
+
+                alert("Аватар успешно загружен!");
+
             } catch (error) {
-                console.error("Ошибка сети:", error);
+                console.error("Ошибка загрузки:", error);
+                alert("Не удалось загрузить аватарку.");
             }
         });
 
