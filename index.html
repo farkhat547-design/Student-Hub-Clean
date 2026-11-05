@@ -269,9 +269,10 @@
         <span class="text">${message.text}</span>
     </div>
 
-    <div id="my-profile-avatar" class="..."
-        style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: ceter;">
-        <span>FF</span>
+    <div id="my-profile-avatar"
+        style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: ceter; background-color: #6c5ce7;">
+        <img id="profile-img-tag" src="/static/avatars/default.png" alt="Профиль"
+            style="width: 100%; height: 100%; object-fit: cover;">
     </div>
 
     <form id="avatar-form" enctype="multipart/form-data">
@@ -324,9 +325,9 @@
                     let data = await response.json();
                     console.log("Аватар загружен:", data.avatar_url);
 
-                    const avatarImg = document.getElementById('user-avatar-img');
-                    if (avatarImg) {
-                        avatarImg.src = data.avatar_url;
+                    const avatarImgTag = document.getElementById('profile-img-tag');
+                    if (avatarImgTag) {
+                        avatarImgTag.src = data.avatar_url;
                     }
 
                     const myProfileAvatar = document.getElementById('my-profile-avatar');
